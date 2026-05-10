@@ -1,3 +1,9 @@
 uav_beam_project/
 scenario23_dev_w_resources/
 *.zip
+
+
+scenario23_clean.csv
+step1_exploration.png
+step2_preprocessing.png
+preprocessed_data.pkl   
