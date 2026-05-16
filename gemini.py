@@ -14,7 +14,7 @@ import json
 # ============================================================
 # 4.1 Configure Gemini API
 # ============================================================
-GEMINI_API_KEY = "AIzaSyAAGmL9sKf6yJrMnH9oxayy0_gMoSs06C1"
+GEMINI_API_KEY = "AIzaSyAAGmL9sKf6yXAdeaDCVDVGqaadd1"
 MODEL_ID       = "gemini-2.5-flash"  # no thinking, low cost
 
 client = genai.Client(api_key=GEMINI_API_KEY)
