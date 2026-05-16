@@ -35,9 +35,17 @@ print(f"\nFirst row:\n{df_raw.iloc[0]}")
 # unit1_pwr_60ghz -> txt file with power per beam (64 values)
 # unit1_beam_index -> index of max power = optimal beam
 
-lat_list        = []
-lon_list        = []
-beam_index_list = []
+lat_list          = []
+lon_list          = []
+beam_index_list   = []
+beam_top2_list    = []
+beam_top3_list    = []
+max_pwr_list      = []
+mean_pwr_list     = []
+std_pwr_list      = []
+median_pwr_list   = []
+top3_mean_list    = []
+pwr_range_list    = []
 
 print(f"\nReading {len(df_raw)} samples from external files...")
 
@@ -49,16 +57,37 @@ for i, row in df_raw.iterrows():
         lat_list.append(pos[0])
         lon_list.append(pos[1])
 
-        # Read power file and compute beam index
-        pwr_path  = os.path.join(ROOT, row['unit1_pwr_60ghz'].lstrip('./').replace('scenario23_dev/', ''))
-        pwr       = np.loadtxt(pwr_path)
-        beam_idx  = int(np.argmax(pwr))
-        beam_index_list.append(beam_idx)
+        # Read power file
+        pwr_path = os.path.join(ROOT, row['unit1_pwr_60ghz'].lstrip('./').replace('scenario23_dev/', ''))
+        pwr      = np.loadtxt(pwr_path)
+
+        # Top-3 beam indices from actual power measurements
+        top3_beams = np.argsort(pwr)[::-1][:3]
+        beam_index_list.append(int(top3_beams[0]))
+        beam_top2_list.append(int(top3_beams[1]))
+        beam_top3_list.append(int(top3_beams[2]))
+
+        # Power-based features
+        top3_indices = np.argsort(pwr)[-3:]
+        max_pwr_list.append(float(np.max(pwr)))
+        mean_pwr_list.append(float(np.mean(pwr)))
+        std_pwr_list.append(float(np.std(pwr)))
+        median_pwr_list.append(float(np.median(pwr)))
+        top3_mean_list.append(float(np.mean(pwr[top3_indices])))
+        pwr_range_list.append(float(np.max(pwr) - np.min(pwr)))
 
     except Exception as e:
         lat_list.append(np.nan)
         lon_list.append(np.nan)
         beam_index_list.append(np.nan)
+        beam_top2_list.append(np.nan)
+        beam_top3_list.append(np.nan)
+        max_pwr_list.append(np.nan)
+        mean_pwr_list.append(np.nan)
+        std_pwr_list.append(np.nan)
+        median_pwr_list.append(np.nan)
+        top3_mean_list.append(np.nan)
+        pwr_range_list.append(np.nan)
 
     if (i + 1) % 500 == 0:
         print(f"  Processed {i+1}/{len(df_raw)} samples")
@@ -69,11 +98,21 @@ for i, row in df_raw.iterrows():
 df = pd.DataFrame({
     'unit2_gps_lat'    : lat_list,
     'unit2_gps_long'   : lon_list,
-    'unit1_beam_index' : beam_index_list
+    'pwr_max'          : max_pwr_list,
+    'pwr_mean'         : mean_pwr_list,
+    'pwr_std'          : std_pwr_list,
+    'pwr_median'       : median_pwr_list,
+    'pwr_top3_mean'    : top3_mean_list,
+    'pwr_range'        : pwr_range_list,
+    'unit1_beam_index' : beam_index_list,
+    'unit1_beam_top2'  : beam_top2_list,
+    'unit1_beam_top3'  : beam_top3_list
 })
 
 df = df.dropna()
 df['unit1_beam_index'] = df['unit1_beam_index'].astype(int)
+df['unit1_beam_top2']  = df['unit1_beam_top2'].astype(int)
+df['unit1_beam_top3']  = df['unit1_beam_top3'].astype(int)
 
 print(f"\nClean dataset size: {len(df)} samples")
 print(f"\nSample rows:\n{df.head(5)}")
