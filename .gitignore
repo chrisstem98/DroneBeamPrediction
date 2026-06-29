@@ -1,5 +1,6 @@
 uav_beam_project/
 scenario23_dev_w_resources/
+results_backup_8features/
 *.zip
 *.pkl
 *.png

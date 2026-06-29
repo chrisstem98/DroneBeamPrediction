@@ -4,6 +4,7 @@
 # The scenario23.csv does not contain GPS values directly.
 # It contains paths to separate files inside unit1/ and unit2/.
 # This script reads those files and builds a single dataframe.
+# Updated: added altitude, distance, speed, height, z-speed, pitch
 # ============================================================
 
 import pandas as pd
@@ -46,6 +47,12 @@ std_pwr_list      = []
 median_pwr_list   = []
 top3_mean_list    = []
 pwr_range_list    = []
+altitude_list     = []
+distance_list     = []
+speed_list        = []
+height_list       = []
+zspeed_list       = []
+pitch_list        = []
 
 print(f"\nReading {len(df_raw)} samples from external files...")
 
@@ -76,6 +83,21 @@ for i, row in df_raw.iterrows():
         top3_mean_list.append(float(np.mean(pwr[top3_indices])))
         pwr_range_list.append(float(np.max(pwr) - np.min(pwr)))
 
+# New features - read from external files like GPS
+        speed_path    = os.path.join(ROOT, row['unit2_speed'].lstrip('./').replace('scenario23_dev/', ''))
+        altitude_path = os.path.join(ROOT, row['unit2_altitude'].lstrip('./').replace('scenario23_dev/', ''))
+        distance_path = os.path.join(ROOT, row['unit2_distance'].lstrip('./').replace('scenario23_dev/', ''))
+        height_path   = os.path.join(ROOT, row['unit2_height'].lstrip('./').replace('scenario23_dev/', ''))
+        zspeed_path   = os.path.join(ROOT, row['unit2_z-speed'].lstrip('./').replace('scenario23_dev/', ''))
+        pitch_path    = os.path.join(ROOT, row['unit2_pitch'].lstrip('./').replace('scenario23_dev/', ''))
+
+        speed_list.append(float(np.loadtxt(speed_path)))
+        altitude_list.append(float(np.loadtxt(altitude_path)))
+        distance_list.append(float(np.loadtxt(distance_path)))
+        height_list.append(float(np.loadtxt(height_path)))
+        zspeed_list.append(float(np.loadtxt(zspeed_path)))
+        pitch_list.append(float(np.loadtxt(pitch_path)))
+
     except Exception as e:
         lat_list.append(np.nan)
         lon_list.append(np.nan)
@@ -88,6 +110,12 @@ for i, row in df_raw.iterrows():
         median_pwr_list.append(np.nan)
         top3_mean_list.append(np.nan)
         pwr_range_list.append(np.nan)
+        altitude_list.append(np.nan)
+        distance_list.append(np.nan)
+        speed_list.append(np.nan)
+        height_list.append(np.nan)
+        zspeed_list.append(np.nan)
+        pitch_list.append(np.nan)
 
     if (i + 1) % 500 == 0:
         print(f"  Processed {i+1}/{len(df_raw)} samples")
@@ -104,6 +132,12 @@ df = pd.DataFrame({
     'pwr_median'       : median_pwr_list,
     'pwr_top3_mean'    : top3_mean_list,
     'pwr_range'        : pwr_range_list,
+    'unit2_altitude'   : altitude_list,
+    'unit2_distance'   : distance_list,
+    'unit2_speed'      : speed_list,
+    'unit2_height'     : height_list,
+    'unit2_zspeed'     : zspeed_list,
+    'unit2_pitch'      : pitch_list,
     'unit1_beam_index' : beam_index_list,
     'unit1_beam_top2'  : beam_top2_list,
     'unit1_beam_top3'  : beam_top3_list

@@ -14,8 +14,8 @@ import json
 # ============================================================
 # 4.1 Configure Gemini API
 # ============================================================
-GEMINI_API_KEY = "AIzaSyAAGmL9sKf6yXAdeaDCVDVGqaadd1"
-MODEL_ID       = "gemini-2.5-flash"  # no thinking, low cost
+GEMINI_API_KEY = "AIzaSyAAGmL9sKf6yJrMnH9oxayy0_gMoSs06Co"
+MODEL_ID       = "gemini-2.5-flash"
 
 client = genai.Client(api_key=GEMINI_API_KEY)
 
@@ -77,6 +77,12 @@ def create_prompt(sample, feature_cols, few_shot_examples=None):
 - Median beam power  : {ex_vals['pwr_median']:.4f}
 - Top-3 mean power   : {ex_vals['pwr_top3_mean']:.4f}
 - Power range        : {ex_vals['pwr_range']:.4f}
+- Altitude           : {ex_vals['unit2_altitude']:.2f}
+- Distance to BS     : {ex_vals['unit2_distance']:.2f}
+- Speed              : {ex_vals['unit2_speed']:.2f}
+- Height             : {ex_vals['unit2_height']:.2f}
+- Vertical speed     : {ex_vals['unit2_zspeed']:.2f}
+- Pitch              : {ex_vals['unit2_pitch']:.2f}
 Correct answer: {{"top1": {ex['y']}, "top2": {ex['y2']}, "top3": {ex['y3']}}}
 
 """
@@ -90,6 +96,8 @@ Key relationships:
 - Higher pwr_max indicates stronger signal in the best beam direction
 - Higher pwr_range indicates a more directional channel with a clear optimal beam
 - GPS position determines the geometric angle to the base station
+- Altitude and distance directly affect the beam elevation angle
+- Higher speed may indicate the drone is moving away from the current optimal beam
 
 {examples_text}Now predict for this new sample:
 - GPS Latitude       : {values['unit2_gps_lat']:.6f}
@@ -100,6 +108,12 @@ Key relationships:
 - Median beam power  : {values['pwr_median']:.4f}
 - Top-3 mean power   : {values['pwr_top3_mean']:.4f}
 - Power range        : {values['pwr_range']:.4f}
+- Altitude           : {values['unit2_altitude']:.2f}
+- Distance to BS     : {values['unit2_distance']:.2f}
+- Speed              : {values['unit2_speed']:.2f}
+- Height             : {values['unit2_height']:.2f}
+- Vertical speed     : {values['unit2_zspeed']:.2f}
+- Pitch              : {values['unit2_pitch']:.2f}
 
 Respond with ONLY a JSON object:
 {{"top1": <best_beam_index>, "top2": <second_best>, "top3": <third_best>}}
@@ -148,12 +162,11 @@ for i, (sample, true_beam) in enumerate(zip(X_sample, y_sample)):
                 max_output_tokens=50,
                 thinking_config=types.ThinkingConfig(thinking_budget=0)
             )
-)
+        )
         preds = parse_response(response.text)
         gemini_predictions.append(preds[0])
         gemini_top3_preds.append(preds)
 
-        # Running accuracy
         if preds[0] == true_beam:
             correct_top1 += 1
         if true_beam in preds[:2]:

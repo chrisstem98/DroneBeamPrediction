@@ -18,10 +18,10 @@ with open('ml_results.pkl', 'rb') as f:
 with open('gemini_results.pkl', 'rb') as f:
     gemini_results = pickle.load(f)
 
-with open('lora_results.pkl', 'rb') as f:
+with open('lora_results_14Features.pkl', 'rb') as f:
     lora_results = pickle.load(f)
 
-with open('beamllm_results.pkl', 'rb') as f:
+with open('beamllm_results_14Features.pkl', 'rb') as f:
     beamllm_results = pickle.load(f)
 
 y_test = data['y_test']

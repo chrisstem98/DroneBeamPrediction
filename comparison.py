@@ -183,22 +183,40 @@ plt.show()
 # ============================================================
 # 6.7 LLM Progression Plot
 # ============================================================
-fig3, ax = plt.subplots(figsize=(10, 5))
+fig3, axes3 = plt.subplots(1, 3, figsize=(15, 5))
 
-llm_models  = ['Gemini\n(zero-shot)', 'LoRA\n(text gen)', 'BeamLLM\n(reprogramming)']
-llm_top1    = [gemini_results['top1'], lora_results['top1'], beamllm_results['top1']]
-ml_baseline = ml_results['MLP']['top1']
+llm_models   = ['Gemini\n(zero-shot)', 'LoRA\n(text gen)', 'BeamLLM\n(reprogramming)']
+llm_colors   = ['red', 'orange', 'steelblue']
+rf_baseline  = ml_results['Random Forest']['top1']
 
-ax.bar(llm_models, llm_top1, color=['red', 'orange', 'steelblue'], alpha=0.8)
-ax.axhline(y=ml_baseline, color='green', linestyle='--', lw=2, label=f'MLP baseline ({ml_baseline:.3f})')
-ax.set_title('LLM Progression: From Zero-Shot to Reprogramming')
-ax.set_ylabel('Top-1 Accuracy')
-ax.set_ylim(0, 0.8)
-ax.legend()
-ax.grid(axis='y', alpha=0.3)
-for i, v in enumerate(llm_top1):
-    ax.text(i, v + 0.01, f'{v:.3f}', ha='center', fontsize=11, fontweight='bold')
+llm_top1 = [gemini_results['top1'], lora_results['top1'], beamllm_results['top1']]
+llm_top2 = [gemini_results['top2'], lora_results['top2'], beamllm_results['top2']]
+llm_top3 = [gemini_results['top3'], lora_results['top3'], beamllm_results['top3']]
+rf_top2  = ml_results['Random Forest']['top2']
+rf_top3  = ml_results['Random Forest']['top3']
 
+for ax, vals, rf_val, title, ylabel in zip(
+    axes3,
+    [llm_top1, llm_top2, llm_top3],
+    [rf_baseline, rf_top2, rf_top3],
+    ['Top-1 Accuracy', 'Top-2 Accuracy', 'Top-3 Accuracy'],
+    ['Top-1', 'Top-2', 'Top-3']
+):
+    bars = ax.bar(llm_models, vals, color=llm_colors, alpha=0.8)
+    ax.axhline(y=rf_val, color='green', linestyle='--', lw=2,
+               label=f'Random Forest ({rf_val:.3f})')
+    ax.set_title(title, fontsize=12)
+    ax.set_ylabel(ylabel)
+    ax.set_ylim(0, 1.05)
+    ax.legend(fontsize=9)
+    ax.grid(axis='y', alpha=0.3)
+    for bar, v in zip(bars, vals):
+        ax.text(bar.get_x() + bar.get_width()/2,
+                v + 0.01, f'{v:.3f}',
+                ha='center', fontsize=10, fontweight='bold')
+
+plt.suptitle('LLM Progression: From Zero-Shot to Reprogramming\nvs Random Forest Baseline',
+             fontsize=13, fontweight='bold')
 plt.tight_layout()
 plt.savefig('step6_llm_progression.png', dpi=150, bbox_inches='tight')
 plt.show()

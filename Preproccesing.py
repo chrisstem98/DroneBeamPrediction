@@ -24,7 +24,13 @@ FEATURE_COLS = [
     'pwr_std',
     'pwr_median',
     'pwr_top3_mean',
-    'pwr_range'
+    'pwr_range',
+    'unit2_altitude',
+    'unit2_distance',
+    'unit2_speed',
+    'unit2_height',
+    'unit2_zspeed',
+    'unit2_pitch'
 ]
 LABEL_COL  = 'unit1_beam_index'
 LABEL_TOP2 = 'unit1_beam_top2'

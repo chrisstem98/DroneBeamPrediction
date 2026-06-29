@@ -83,7 +83,7 @@ print(f"  Time        : {time.time()-start:.1f}s")
 print("\n[3/3] Grid Search: MLP...")
 mlp_grid = GridSearchCV(
     MLPClassifier(random_state=42),
-    {'hidden_layer_sizes': [(64,), (128, 64), (256, 128)], 'learning_rate_init': [0.001, 0.01], 'max_iter': [500]},
+    {'hidden_layer_sizes': [(64,), (128, 64), (256, 128)], 'learning_rate_init': [0.001, 0.01], 'max_iter': [500,1000]},
     cv=3, scoring='accuracy', n_jobs=-1, verbose=1
 )
 start = time.time()
