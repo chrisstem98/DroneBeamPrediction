@@ -1,3 +1,4 @@
+```markdown
 # UAV Beam Prediction and Handover Detection
 ## Using Multimodal Sensing and Large Language Models
 
@@ -27,9 +28,10 @@ In modern mmWave communication systems, selecting the optimal beam from a large 
 - A drone flies over a flying zone in front of a fixed 60 GHz base station
 - The base station sweeps all 64 beams and records received power per beam
 
-**Features used (8 total):**
+**Features used (14 total):**
 - GPS position: latitude, longitude
 - Power statistics: max, mean, std, median, top-3 mean, range
+- Mobility: altitude, distance, speed, height, z-speed, pitch
 
 **Labels:**
 - `unit1_beam_index`: optimal beam (argmax of power vector)
@@ -46,7 +48,7 @@ In modern mmWave communication systems, selecting the optimal beam from a large 
 | Random Forest | Traditional ML | Ensemble of decision trees with Grid Search |
 | KNN | Traditional ML | K-Nearest Neighbors with Grid Search |
 | MLP | Traditional ML | Multilayer Perceptron with Grid Search |
-| Gemini (zero-shot) | LLM | General-purpose LLM with few-shot prompting, no training |
+| Gemini (few-shot) | LLM | General-purpose LLM with few-shot prompting, no training |
 | Qwen + LoRA | Fine-tuned LLM | Instruction-tuned LLM with LoRA adapters on beam prediction data |
 | BeamLLM | LLM + Reprogramming | Frozen LLM backbone with trainable input/output reprogramming layers and classification head |
 
@@ -54,16 +56,41 @@ In modern mmWave communication systems, selecting the optimal beam from a large 
 
 ## Key Results
 
+### Beam Prediction (14 features)
+
 | Model | Top-1 | Top-2 | Top-3 |
 |-------|-------|-------|-------|
-| KNN | 0.596 | 0.767 | 0.820 |
-| Random Forest | 0.625 | 0.810 | 0.880 |
-| BeamLLM | 0.638 | 0.832 | 0.907 |
-| MLP | 0.649 | 0.837 | 0.911 |
-| Gemini (zero-shot) | 0.010 | 0.070 | 0.100 |
-| Qwen + LoRA | 0.140 | 0.190 | 0.200 |
+| KNN | 0.657 | 0.801 | 0.823 |
+| MLP | 0.640 | 0.862 | 0.935 |
+| **Random Forest** | **0.697** | 0.864 | 0.922 |
+| Gemini (few-shot) | 0.100 | 0.210 | 0.250 |
+| Qwen + LoRA | 0.340 | 0.430 | 0.540 |
+| **BeamLLM** | **0.692** | **0.883** | **0.943** |
 
 **Top-K Accuracy:** percentage of test samples where the correct beam appears within the top-K predictions.
+
+### Ablation Study: 8 vs 14 Features (Top-1)
+
+| Model | 8 features | 14 features | Δ |
+|-------|-----------|------------|---|
+| Random Forest | 0.625 | 0.697 | **+7.2%** |
+| KNN | 0.596 | 0.657 | **+6.1%** |
+| MLP | 0.649 | 0.640 | -0.9% |
+| Gemini | 0.140 | 0.100 | -4.0% |
+| Qwen + LoRA | 0.300 | 0.340 | **+4.0%** |
+| BeamLLM | 0.638 | 0.692 | **+5.4%** |
+
+### Handover Detection (θ=10, 14 features)
+
+| Model | HDA | FAR | MDR |
+|-------|-----|-----|-----|
+| **Random Forest** | **0.970** | **0.035** | **0.023** |
+| **KNN** | **0.970** | **0.035** | **0.023** |
+| MLP | 0.940 | 0.053 | 0.070 |
+| Gemini | 0.570 | 0.193 | 0.744 |
+| Qwen + LoRA | 0.590 | 0.211 | 0.674 |
+| BeamLLM | 0.940 | 0.053 | 0.070 |
+| Ground Truth | 1.000 | 0.000 | 0.000 |
 
 ---
 
@@ -80,15 +107,17 @@ Beyond beam prediction, the project introduces a **handover detection module** t
 
 ## Research Findings
 
-1. **Zero-shot LLMs fail at domain-specific tasks.** Gemini achieves only 1% Top-1 accuracy without any domain adaptation, confirming that general language knowledge does not transfer to wireless communication tasks.
+1. **Mobility features significantly improve performance.** Adding 6 mobility features (altitude, distance, speed, height, z-speed, pitch) improved Random Forest by +7.2%, KNN by +6.1%, and BeamLLM by +5.4%. Tree-based models benefit most, as they effectively exploit the categorical patterns introduced by altitude and distance features. In handover detection, Random Forest and KNN improved from 91% and 90% to 97% HDA respectively.
 
-2. **Fine-tuning helps but is insufficient with text generation.** Qwen + LoRA improves from 1% to 14% Top-1, showing that fine-tuning provides meaningful adaptation but text generation is not the right paradigm for numerical classification.
+2. **Zero-shot LLMs fail at domain-specific tasks.** Gemini achieves only 10% Top-1 accuracy with few-shot prompting, confirming that general language knowledge does not transfer to wireless communication tasks. Adding more features to the prompt actually hurt performance (from 14% to 10%), showing that more information without domain knowledge only adds confusion.
 
-3. **Architectural reprogramming bridges the gap.** BeamLLM, using frozen LLM backbone with trainable reprogramming layers, achieves 63.8% Top-1 — surpassing Random Forest and KNN, and approaching MLP performance within 1.1%.
+3. **Fine-tuning helps but is insufficient with text generation.** Qwen + LoRA improves to 34% Top-1 with 14 features (+4% over 8 features), showing that fine-tuning provides meaningful adaptation but text generation is not the right paradigm for numerical classification.
 
-4. **Traditional ML remains competitive.** MLP with Grid Search achieves the best overall performance, highlighting that well-tuned classical models are still strong baselines for structured sensor data tasks.
+4. **Architectural reprogramming bridges the gap.** BeamLLM, using a frozen LLM backbone with trainable reprogramming layers, achieves 69.2% Top-1 — surpassing all classical ML models in Top-2 (88.3%) and Top-3 (94.3%), and matching Random Forest in Top-1. Only 0.73% of parameters are trainable.
 
-5. **Domain-specific pretraining is the missing ingredient.** The performance gap between BeamLLM and MLP suggests that LLMs require domain-specific pretraining on wireless data to fully exploit their representational capacity — consistent with the findings of Cheng et al.
+5. **Traditional ML remains competitive.** Random Forest with Grid Search achieves 69.7% Top-1, becoming the best classical model when mobility features are included. Well-tuned classical models are still strong baselines for structured sensor data tasks.
+
+6. **Domain-specific pretraining is the missing ingredient.** The performance gap between BeamLLM and Random Forest suggests that LLMs require domain-specific pretraining on wireless data to fully exploit their representational capacity — consistent with the findings of Cheng et al.
 
 ---
 
@@ -96,16 +125,17 @@ Beyond beam prediction, the project introduces a **handover detection module** t
 
 ```
 uav_beam_project/
-    scenario23_dev/              DeepSense 6G Scenario 23 dataset
-    step1_load_data.py           Load dataset and extract features
-    step2_preprocessing.py       Normalization and train/val/test split
-    step3_ml_models.py           Train RF, KNN, MLP with Grid Search
-    step4_gemini.py              Gemini API zero-shot evaluation
-    step5_handover.py            Handover detection and metrics
-    step6_final_comparison.py    Final plots and summary table
-    lora_finetuning.ipynb        Qwen + LoRA fine-tuning (Google Colab)
-    beamllm_reprogramming.ipynb  BeamLLM reprogramming architecture (Google Colab)
-    requirements.txt             Python dependencies
+    scenario23_dev/                   DeepSense 6G Scenario 23 dataset
+    LoadFile.py                       Load dataset and extract 14 features
+    Preproccesing.py                  Normalization and train/val/test split
+    ML_models.py                      Train RF, KNN, MLP with Grid Search
+    gemini.py                         Gemini API few-shot evaluation
+    handover.py                       Handover detection and metrics
+    comparison.py                     Final plots and summary table
+    FineTuningLLM_BeamPredection.ipynb   Qwen + LoRA fine-tuning (Google Colab)
+    BeamLLM_BeamPredictor.ipynb          BeamLLM reprogramming architecture (Google Colab)
+    requirements.txt                  Python dependencies
+    results_backup_8features/         Backup of results with 8 features
 ```
 
 ---
@@ -128,13 +158,14 @@ Get a free API key at: [https://aistudio.google.com](https://aistudio.google.com
 ## Execution Order
 
 ```bash
-python step1_load_data.py        # Build clean dataset
-python step2_preprocessing.py    # Preprocess and split
-python step3_ml_models.py        # Train ML models
-python step4_gemini.py           # Run Gemini evaluation
-# Run lora_finetuning.ipynb and beamllm_reprogramming.ipynb on Google Colab
-python step5_handover.py         # Handover detection
-python step6_final_comparison.py # Final comparison plots
+python LoadFile.py           # Build clean dataset with 14 features
+python Preproccesing.py      # Preprocess and split
+python ML_models.py          # Train ML models with Grid Search
+python gemini.py             # Run Gemini few-shot evaluation
+# Run FineTuningLLM_BeamPredection.ipynb on Google Colab → download lora_results.pkl
+# Run BeamLLM_BeamPredictor.ipynb on Google Colab → download beamllm_results.pkl
+python handover.py           # Handover detection
+python comparison.py         # Final comparison plots
 ```
 
 ---
@@ -149,10 +180,17 @@ python step6_final_comparison.py # Final comparison plots
 
 ---
 
-## Reference
+## References
 
 Lu Cheng, Hongliang Zhang, Boya Di, Dusit Niyato, Lingyang Song,
 *"Large Language Models Empower Multimodal Integrated Sensing and Communication,"*
 IEEE Communications Magazine, May 2025.
 
-Dataset: A. Alkhateeb et al., *"DeepSense 6G: A Large-Scale Real-World Multi-Modal Sensing and Communication Dataset,"* IEEE Communications Magazine, vol. 61, no. 9, Sep. 2023.
+C. Zheng et al.,
+*"BeamLLM: Vision-Empowered mmWave Beam Prediction with Large Language Models,"*
+arXiv preprint arXiv:2503.10432, Mar. 2025.
+
+A. Alkhateeb et al.,
+*"DeepSense 6G: A Large-Scale Real-World Multi-Modal Sensing and Communication Dataset,"*
+IEEE Communications Magazine, vol. 61, no. 9, Sep. 2023.
+```
