@@ -185,7 +185,7 @@ plt.show()
 # ============================================================
 fig3, axes3 = plt.subplots(1, 3, figsize=(15, 5))
 
-llm_models   = ['Gemini\n(zero-shot)', 'LoRA\n(text gen)', 'BeamLLM\n(reprogramming)']
+llm_models   = ['Gemini\n(few-shot)', 'LoRA\n(text gen)', 'BeamLLM\n(reprogramming)']
 llm_colors   = ['red', 'orange', 'steelblue']
 rf_baseline  = ml_results['Random Forest']['top1']
 
